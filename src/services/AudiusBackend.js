@@ -1029,7 +1029,6 @@ class AudiusBackend {
   static async updateUser (metadata, id) {
     await AudiusBackend.sanityChecks(audiusLibs, true)
 
-    // probably need to wait for dp to index..
     let newMetadata = { ...metadata }
     try {
       if (newMetadata.updatedProfilePicture) {
