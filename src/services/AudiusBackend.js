@@ -323,13 +323,17 @@ class AudiusBackend {
     })
   }
 
-  static async sanityChecks(audiusLibs) {
+  static async sanityChecks (audiusLibs, onlyAssignReplicaSet = false) {
     try {
       const sanityCheckOptions = {
         skipRollover: getRemoteVar(BooleanKeys.SKIP_ROLLOVER_NODES_SANITY_CHECK)
       }
       const sanityChecks = new SanityChecks(audiusLibs, sanityCheckOptions)
-      await sanityChecks.run()
+      if (onlyAssignReplicaSet) {
+        await sanityChecks.run()
+      } else {
+        await sanityChecks.assignReplicaSet(audiusLibs)
+      }
     } catch (e) {
       console.error(`Sanity checks failed: ${e}`)
     }
@@ -395,7 +399,7 @@ class AudiusBackend {
           IDENTITY_SERVICE
         ),
         creatorNodeConfig: AudiusLibs.configCreatorNode(
-          USER_NODE,
+          null,
           /* lazyConnect */ true,
           /* passList */ null,
           contentNodeBlockList,
@@ -1022,7 +1026,10 @@ class AudiusBackend {
     }
   }
 
-  static async updateUser(metadata, id) {
+  static async updateUser (metadata, id) {
+    await AudiusBackend.sanityChecks(audiusLibs, true)
+
+    // probably need to wait for dp to index..
     let newMetadata = { ...metadata }
     try {
       if (newMetadata.updatedProfilePicture) {
