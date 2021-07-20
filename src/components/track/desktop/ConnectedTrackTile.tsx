@@ -1,5 +1,6 @@
 import React, { memo, useState, useCallback, useEffect } from 'react'
 
+import { PopupMenu } from '@audius/stems'
 import cn from 'classnames'
 import { push as pushRoute } from 'connected-react-router'
 import { connect } from 'react-redux'
@@ -9,8 +10,6 @@ import { ReactComponent as IconKebabHorizontal } from 'assets/img/iconKebabHoriz
 import ArtistPopover from 'components/artist/ArtistPopover'
 import { TrackArtwork } from 'components/track/desktop/Artwork'
 import Draggable from 'containers/dragndrop/Draggable'
-import Menu from 'containers/menu/Menu'
-import { OwnProps as TrackMenuProps } from 'containers/menu/TrackMenu'
 import UserBadges from 'containers/user-badges/UserBadges'
 import { UID, ID } from 'models/common/Identifiers'
 import { ShareSource, RepostSource, FavoriteSource } from 'services/analytics'
@@ -93,6 +92,7 @@ const ConnectedTrackTile = memo(
     isTrending,
     showRankIcon
   }: ConnectedTrackTileProps) => {
+    const dispatch = useDispatch()
     const {
       is_delete,
       track_id: trackId,
@@ -151,30 +151,31 @@ const ConnectedTrackTile = memo(
     }
 
     const renderOverflowMenu = () => {
-      const menu: Omit<TrackMenuProps, 'children'> = {
-        extraMenuItems: [],
-        handle: handle,
-        includeAddToPlaylist: true,
-        includeArtistPick: handle === userHandle,
-        includeEdit: handle === userHandle,
-        includeEmbed: true,
-        includeFavorite: false,
-        includeRepost: false,
-        includeShare: false,
-        includeTrackPage: true,
-        isArtistPick: isArtistPick,
-        isDeleted: is_delete,
-        isFavorited,
-        isOwner,
-        isReposted,
-        trackId: trackId,
-        trackTitle: title,
-        type: 'track'
-      }
+      const items = getTrackMenuItems(
+        {
+          handle: handle,
+          isArtistPick: isArtistPick,
+          isDeleted: is_delete,
+          isFavorited,
+          isOwner,
+          isReposted,
+          trackId: trackId,
+          trackTitle: title
+        },
+        dispatch
+      )
 
       return (
-        <Menu menu={menu}>
-          {(ref, triggerPopup) => (
+        <PopupMenu
+          menuClassName={styles.menuContainer}
+          items={[
+            items.addToPlaylist,
+            items.edit,
+            items.embed,
+            items.visitTrackPage,
+            ...(handle === userHandle ? [items.setArtistPick, items.edit] : [])
+          ]}
+          renderTrigger={(ref, triggerPopup) => (
             <div className={styles.menuContainer}>
               <div
                 className={cn(styles.menuKebabContainer, {
@@ -190,7 +191,7 @@ const ConnectedTrackTile = memo(
               </div>
             </div>
           )}
-        </Menu>
+        />
       )
     }
 
@@ -339,6 +340,7 @@ const ConnectedTrackTile = memo(
   }
 )
 
+// TODO: sk - update to hooks
 function mapStateToProps(state: AppState, ownProps: OwnProps) {
   return {
     track: getTrack(state, { uid: ownProps.uid }),
