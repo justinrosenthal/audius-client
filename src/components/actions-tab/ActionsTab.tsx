@@ -43,14 +43,14 @@ type ActionsTabProps = {
   currentUserSaved?: boolean
   direction?: 'vertical' | 'horizontal'
   handle?: string
-  id: number
+  id?: number
   includeEdit?: boolean
   isArtistPick?: boolean
   isDisabled?: boolean
   isHidden?: boolean
   isPublic?: boolean
   standalone?: boolean
-  title: string
+  title?: string
   userHandle?: string
   variant?: ActionsTabVariant
 }

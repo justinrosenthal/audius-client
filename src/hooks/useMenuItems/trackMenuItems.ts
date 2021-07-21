@@ -37,14 +37,14 @@ const messages = {
 
 export type GetTrackMenuItemsOptions = {
   handle: string
-  id: ID
+  id?: ID
   isArtistPick?: boolean
   isDeleted?: boolean
   isFavorited?: boolean
   isOwner?: boolean
   isPublic?: boolean
   isReposted?: boolean
-  title: string
+  title?: string
 }
 
 export const getTrackMenuItems = (

@@ -43,6 +43,7 @@ import styles from './ConnectedTrackTile.module.css'
 import TrackTile from './TrackTile'
 import Stats from './stats/Stats'
 import { Flavor } from './stats/StatsText'
+import { useMenuItems } from 'hooks/useMenuItems/useMenuItems'
 
 type OwnProps = {
   uid: UID
@@ -92,7 +93,6 @@ const ConnectedTrackTile = memo(
     isTrending,
     showRankIcon
   }: ConnectedTrackTileProps) => {
-    const dispatch = useDispatch()
     const {
       is_delete,
       track_id: trackId,
@@ -116,6 +116,17 @@ const ConnectedTrackTile = memo(
     const isTrackPlaying = isActive && isPlaying
     const isOwner = handle === userHandle
     const isArtistPick = showArtistPick && _artist_pick === trackId
+
+    const menuItems = useMenuItems('track', {
+      handle: handle,
+      isArtistPick: isArtistPick,
+      isDeleted: is_delete,
+      isFavorited,
+      isOwner,
+      isReposted,
+      id: trackId,
+      title
+    })
 
     const onClickStatRepost = () => {
       setRepostUsers(trackId)
@@ -151,29 +162,15 @@ const ConnectedTrackTile = memo(
     }
 
     const renderOverflowMenu = () => {
-      const items = getTrackMenuItems(
-        {
-          handle: handle,
-          isArtistPick: isArtistPick,
-          isDeleted: is_delete,
-          isFavorited,
-          isOwner,
-          isReposted,
-          trackId: trackId,
-          trackTitle: title
-        },
-        dispatch
-      )
-
       return (
         <PopupMenu
-          menuClassName={styles.menuContainer}
           items={[
-            items.addToPlaylist,
-            items.edit,
-            items.embed,
-            items.visitTrackPage,
-            ...(handle === userHandle ? [items.setArtistPick, items.edit] : [])
+            menuItems.addToPlaylist,
+            menuItems.edit,
+            menuItems.embed,
+            menuItems.visitTrackPage,
+            menuItems.setArtistPick,
+            menuItems.edit
           ]}
           renderTrigger={(ref, triggerPopup) => (
             <div className={styles.menuContainer}>

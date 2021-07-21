@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
+import { PopupMenu } from '@audius/stems'
 import cn from 'classnames'
 import { push as pushRoute } from 'connected-react-router'
 import { connect } from 'react-redux'
@@ -13,7 +14,6 @@ import PerspectiveCard from 'components/perspective-card/PerspectiveCard'
 import RepostFavoritesStats, {
   Size
 } from 'components/repost-favorites-stats/RepostFavoritesStats'
-import Menu from 'containers/menu/Menu'
 import { useCollectionCoverArt } from 'hooks/useImageSize'
 import { ID } from 'models/common/Identifiers'
 import { SquareSizes } from 'models/common/ImageSizes'
@@ -33,6 +33,7 @@ import { playlistPage, albumPage, profilePage } from 'utils/route'
 import { withNullGuard } from 'utils/withNullGuard'
 
 import styles from './CollectionArtCard.module.css'
+import { useMenuItems } from 'hooks/useMenuItems/useMenuItems'
 
 type OwnProps = {
   className?: string
@@ -85,6 +86,21 @@ const CollectionArtCard = g(
 
     const [isPerspectiveDisabled, setIsPerspectiveDisabled] = useState(false)
 
+    const menuItemOptions = useMenuItems('collection', {
+      handle,
+      id: playlist_id,
+      title: playlist_name,
+      isOwner: currentUserId === user_id,
+      // includeShare: true,
+      // includeRepost: true,
+      // includeSave: true,
+      // includeVisitPage: true,
+      isFavorited: has_current_user_saved,
+      isReposted: has_current_user_reposted
+    })
+
+    const menuItems = [menuItemOptions.share]
+
     const goToCollection = useCallback(() => {
       if (isPerspectiveDisabled) return
       const link = is_album
@@ -123,22 +139,6 @@ const CollectionArtCard = g(
     )
     if (image && setDidLoad) setDidLoad(index)
 
-    const menu = {
-      type: is_album ? 'album' : 'playlist',
-      handle,
-      playlistId: playlist_id,
-      playlistName: playlist_name,
-      isOwner: currentUserId === user_id,
-      includeShare: true,
-      includeRepost: true,
-      includeSave: true,
-      includeVisitPage: true,
-      isFavorited: has_current_user_saved,
-      isReposted: has_current_user_reposted,
-      metadata: collection,
-      name: playlist_name
-    }
-
     return (
       <div className={cn(styles.card, className)}>
         <PerspectiveCard
@@ -150,13 +150,10 @@ const CollectionArtCard = g(
             wrapperClassName={styles.coverArt}
             image={isLoading ? '' : image}
           >
-            <Menu
-              // @ts-ignore
-              menu={menu}
+            <PopupMenu
+              items={menuItems}
               onClose={() => setIsPerspectiveDisabled(false)}
-              className={styles.iconKebabHorizontalWrapper}
-            >
-              {(ref, triggerPopup) => (
+              renderTrigger={(ref, triggerPopup) => (
                 <div
                   onClick={e => {
                     e.stopPropagation()
@@ -170,7 +167,7 @@ const CollectionArtCard = g(
                   />
                 </div>
               )}
-            </Menu>
+            />
           </DynamicImage>
         </PerspectiveCard>
         <div className={styles.playlistName} onClick={goToCollection}>
