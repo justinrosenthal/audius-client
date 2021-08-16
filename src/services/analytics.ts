@@ -41,6 +41,14 @@ export enum Name {
   SETTINGS_RESEND_ACCOUNT_RECOVERY = 'Settings: Resend Account Recovery',
   SETTINGS_LOG_OUT = 'Settings: Log Out',
 
+  // TikTok
+  TIKTOK_START_OAUTH = 'TikTok: Start TikTok OAuth',
+  TIKTOK_COMPLETE_OAUTH = 'TikTok: Complete TikTok OAuth',
+  TIKTOK_OAUTH_ERROR = 'TikTok: TikTok OAuth Error',
+  TIKTOK_START_SHARE_SOUND = 'TikTok: Start Share Sound',
+  TIKTOK_COMPLETE_SHARE_SOUND = 'TikTok: Complete Share Sound',
+  TIKTOK_SHARE_SOUND_ERROR = 'TikTok: Share Sound Error',
+
   // Visualizer
   VISUALIZER_OPEN = 'Visualizer: Open',
   VISUALIZER_CLOSE = 'Visualizer: Close',
@@ -110,6 +118,7 @@ export enum Name {
   PROFILE_PAGE_SORT = 'Profile Page: Sort',
   PROFILE_PAGE_CLICK_INSTAGRAM = 'Profile Page: Go To Instagram',
   PROFILE_PAGE_CLICK_TWITTER = 'Profile Page: Go To Twitter',
+  PROFILE_PAGE_CLICK_TIKTOK = 'Profile Page: Go To TikTok',
   PROFILE_PAGE_CLICK_WEBSITE = 'ProfilePage: Go To Website',
   PROFILE_PAGE_CLICK_DONATION = 'ProfilePage: Go To Donation',
 
@@ -244,7 +253,7 @@ type SignInFinish = {
   status: 'success' | 'invalid credentials'
 }
 
-// Settigns
+// Settings
 type SettingsChangeTheme = {
   eventName: Name.SETTINGS_CHANGE_THEME
   mode: 'dark' | 'light' | 'matrix' | 'auto'
@@ -272,8 +281,35 @@ type SettingsCompleteInstagramOauth = {
 type SettingsResetAccountRecovery = {
   eventName: Name.SETTINGS_RESEND_ACCOUNT_RECOVERY
 }
-type SettignsLogOut = {
+type SettingsLogOut = {
   eventName: Name.SETTINGS_LOG_OUT
+}
+
+// TikTok
+type TikTokStartOAuth = {
+  eventName: Name.TIKTOK_START_OAUTH
+}
+
+type TikTokCompleteOAuth = {
+  eventName: Name.TIKTOK_COMPLETE_OAUTH
+}
+
+type TikTokOAuthError = {
+  eventName: Name.TIKTOK_OAUTH_ERROR
+  error: string
+}
+
+type TikTokStartShareSound = {
+  eventName: Name.TIKTOK_START_SHARE_SOUND
+}
+
+type TikTokCompleteShareSound = {
+  eventName: Name.TIKTOK_COMPLETE_SHARE_SOUND
+}
+
+type TikTokShareSoundError = {
+  eventName: Name.TIKTOK_SHARE_SOUND_ERROR
+  error: string
 }
 
 // Error
@@ -575,6 +611,11 @@ type ProfilePageClickTwitter = {
   handle: string
   twitterHandle: string
 }
+type ProfilePageClickTikTok = {
+  eventName: Name.PROFILE_PAGE_CLICK_TIKTOK
+  handle: string
+  tikTokHandle: string
+}
 type ProfilePageClickWebsite = {
   eventName: Name.PROFILE_PAGE_CLICK_WEBSITE
   handle: string
@@ -841,7 +882,13 @@ export type AllTrackingEvents =
   | SettingsStartInstagramOauth
   | SettingsCompleteInstagramOauth
   | SettingsResetAccountRecovery
-  | SettignsLogOut
+  | SettingsLogOut
+  | TikTokStartOAuth
+  | TikTokCompleteOAuth
+  | TikTokOAuthError
+  | TikTokStartShareSound
+  | TikTokCompleteShareSound
+  | TikTokShareSoundError
   | VisualizerOpen
   | VisualizerClose
   | AccountHealthMeterFull
@@ -887,6 +934,7 @@ export type AllTrackingEvents =
   | ProfilePageSort
   | ProfilePageClickInstagram
   | ProfilePageClickTwitter
+  | ProfilePageClickTikTok
   | ProfilePageClickWebsite
   | ProfilePageClickDonation
   | TrackPageDownload

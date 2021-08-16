@@ -44,7 +44,7 @@ import {
 } from 'store/social/tracks/actions'
 import { Genre } from 'utils/genres'
 import { setupHotkeys } from 'utils/hotkeyUtil'
-import { trackPage, profilePage } from 'utils/route'
+import { profilePage } from 'utils/route'
 import { isMatrix, shouldShowDark } from 'utils/theme/theme'
 
 import styles from './PlayBar.module.css'
@@ -127,10 +127,7 @@ class PlayBar extends Component {
     } = this.props
 
     if (track && user) {
-      const handle = user.handle
-      const title = track.title
-      const id = track.track_id
-      goToRoute(trackPage(handle, title, id))
+      goToRoute(track.permalink)
     }
   }
 
@@ -232,7 +229,7 @@ class PlayBar extends Component {
       reset,
       currentQueueItem: { track }
     } = this.props
-    if (track.genre === Genre.PODCASTS) {
+    if (track?.genre === Genre.PODCASTS) {
       const position = audio.getPosition()
       const newPosition = position - SKIP_DURATION_SEC
       seek(Math.max(0, newPosition))
@@ -257,7 +254,7 @@ class PlayBar extends Component {
       next,
       currentQueueItem: { track }
     } = this.props
-    if (track.genre === Genre.PODCASTS) {
+    if (track?.genre === Genre.PODCASTS) {
       const duration = audio.getDuration()
       const position = audio.getPosition()
       const newPosition = position + SKIP_DURATION_SEC
@@ -296,6 +293,7 @@ class PlayBar extends Component {
     let favorited = false
     let isOwner = false
     let isTrackUnlisted = false
+    let trackPermalink = ''
 
     if (uid && track && user) {
       trackTitle = track.title
@@ -305,6 +303,7 @@ class PlayBar extends Component {
       isVerified = user.is_verified
       profilePictureSizes = user._profile_picture_sizes
       isOwner = track.owner_id === userId
+      trackPermalink = track.permalink
 
       duration = audio.getDuration()
       trackId = track.track_id
@@ -333,6 +332,7 @@ class PlayBar extends Component {
               trackId={trackId}
               isOwner={isOwner}
               trackTitle={trackTitle}
+              trackPermalink={trackPermalink}
               artistName={artistName}
               artistHandle={artistHandle}
               artistUserId={artistUserId}

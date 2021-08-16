@@ -160,6 +160,7 @@ const CollectionArtCard = g(
                     setIsPerspectiveDisabled(true)
                     triggerPopup()
                   }}
+                  className={styles.iconKebabHorizontalWrapper}
                 >
                   <IconKebabHorizontal
                     className={styles.iconKebabHorizontal}

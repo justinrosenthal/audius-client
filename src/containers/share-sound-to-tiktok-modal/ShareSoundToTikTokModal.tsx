@@ -5,13 +5,19 @@ import {
   Modal,
   ButtonType,
   IconTikTokInverted,
-  IconTikTok
+  IconTikTok,
+  Anchor,
+  ModalProps
 } from '@audius/stems'
+import cn from 'classnames'
 import { useDispatch, useSelector } from 'react-redux'
 
+import { MODAL_OFFSET_PIXELS } from 'components/action-sheet-modal/ActionSheetModal'
 import LoadingSpinner from 'components/loading-spinner/LoadingSpinner'
 import { useModalState } from 'hooks/useModalState'
 import { useTikTokAuth } from 'hooks/useTikTokAuth'
+import { useWithMobileStyle } from 'hooks/useWithMobileStyle'
+import { isMobile } from 'utils/clientUtil'
 import { Nullable } from 'utils/typeUtils'
 
 import styles from './ShareSoundToTikTokModal.module.css'
@@ -42,6 +48,9 @@ const fileRequirementErrorMessages = {
 }
 
 const ShareSoundToTikTokModal = () => {
+  const mobile = isMobile()
+  const wm = useWithMobileStyle(styles.mobile)
+
   const [isOpen, setIsOpen] = useModalState('ShareSoundToTikTok')
   const dispatch = useDispatch()
 
@@ -67,7 +76,7 @@ const ShareSoundToTikTokModal = () => {
   const handleShareButtonClick = () => {
     if (track) {
       // Trigger the share process, which initially downloads the track to the client
-      dispatch(share({ cid: track.cid }))
+      dispatch(share())
 
       // Trigger the authentication process
       withTikTokAuth(() => dispatch(authenticated()))
@@ -91,9 +100,17 @@ const ShareSoundToTikTokModal = () => {
           ? messages.error
           : fileRequirementErrorMessages[fileRequirementError!]
 
-      return <div className={styles.errorMessage}>{errorMessage}</div>
+      return (
+        <div className={cn(styles.message, styles.errorMessage)}>
+          {errorMessage}
+        </div>
+      )
     } else {
-      return <div>{rawMessage.replace('[Track Name]', track?.title ?? '')}</div>
+      return (
+        <div className={styles.message}>
+          {rawMessage.replace('[Track Name]', track?.title ?? '')}
+        </div>
+      )
     }
   }
 
@@ -125,24 +142,31 @@ const ShareSoundToTikTokModal = () => {
     }
   }
 
+  const mobileProps: Partial<ModalProps> = {
+    anchor: Anchor.BOTTOM,
+    showDismissButton: false,
+    verticalAnchorOffset: MODAL_OFFSET_PIXELS
+  }
+
   return (
     <Modal
+      allowScroll={false}
+      bodyClassName={wm(styles.modalBody)}
       dismissOnClickOutside={status !== Status.SHARE_STARTED}
+      headerContainerClassName={wm(styles.modalHeader)}
       isOpen={isOpen}
+      onClose={() => setIsOpen(false)}
       showTitleHeader
       showDismissButton
       title={
-        <div className={styles.titleContainer}>
+        <div className={wm(styles.titleContainer)}>
           <IconTikTok />
           <div>{messages.title}</div>
         </div>
       }
-      onClose={() => setIsOpen(false)}
-      allowScroll={false}
-      bodyClassName={styles.modalBody}
-      headerContainerClassName={styles.modalHeader}
+      {...(mobile ? mobileProps : {})}
     >
-      <div className={styles.modalContent}>
+      <div className={wm(styles.modalContent)}>
         {renderMessage()}
         {status === Status.SHARE_STARTED ? <LoadingSpinner /> : renderButton()}
       </div>

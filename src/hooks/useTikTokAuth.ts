@@ -7,6 +7,11 @@ import 'whatwg-fetch'
 import 'url-search-params-polyfill'
 
 import { IDENTITY_SERVICE } from 'services/AudiusBackend'
+import { Name } from 'services/analytics'
+import { RequestTikTokAuthMessage } from 'services/native-mobile-interface/oauth'
+import { useRecord, make } from 'store/analytics/actions'
+
+const NATIVE_MOBILE = process.env.REACT_APP_NATIVE_MOBILE
 
 type useTikTokAuthOptions = {
   onError: (e: Error) => void
@@ -21,8 +26,15 @@ type WithAuthCallback = (accessToken: string, openId: string) => void
  * @returns {Function}
  */
 export const useTikTokAuth = ({
-  onError
+  onError: errorCallback
 }: useTikTokAuthOptions): ((callback: WithAuthCallback) => void) => {
+  const record = useRecord()
+
+  const onError = (e: Error) => {
+    errorCallback(e)
+    record(make(Name.TIKTOK_OAUTH_ERROR, { error: e.message }))
+  }
+
   const withAuth = (callback: WithAuthCallback) => {
     const accessToken = window.localStorage.getItem('tikTokAccessToken')
     const openId = window.localStorage.getItem('tikTokOpenId')
@@ -34,18 +46,37 @@ export const useTikTokAuth = ({
     if (accessToken && openId && !isExpired) {
       callback(accessToken, openId)
     } else {
-      getRequestToken(callback)
+      record(make(Name.TIKTOK_START_OAUTH, {}))
+      getRequestToken(callback, !!NATIVE_MOBILE)
     }
   }
 
-  const getRequestToken = (callback: WithAuthCallback) => {
-    const popup = openPopup()
+  const getRequestToken = async (
+    callback: WithAuthCallback,
+    isNativeMobile: boolean
+  ) => {
+    const authenticationUrl = `${IDENTITY_SERVICE}/tiktok`
 
-    if (popup) {
-      const authenticationUrl = `${IDENTITY_SERVICE}/tiktok`
+    if (isNativeMobile) {
+      const message = new RequestTikTokAuthMessage(authenticationUrl)
+      message.send()
+      const response = await message.receive()
 
-      popup.location.href = authenticationUrl
-      poll(popup, callback)
+      const { accessToken, openId, expiresIn, error } = response
+      if (accessToken && openId && expiresIn) {
+        storeAccessToken(accessToken, openId, expiresIn, callback)
+      } else {
+        onError(
+          new Error(error || 'Access token not returned from native layer')
+        )
+      }
+    } else {
+      const popup = openPopup()
+
+      if (popup) {
+        popup.location.href = authenticationUrl
+        poll(popup, callback)
+      }
     }
   }
 
@@ -91,16 +122,17 @@ export const useTikTokAuth = ({
             } else {
               closeDialog()
               return onError(
-                new Error(error || 'An error occured during OAuth')
+                new Error(
+                  error ||
+                    'OAuth redirect has occured but authorizationCode was not found.'
+                )
               )
             }
           } else {
             closeDialog()
             return onError(
               new Error(
-                'OAuth redirect has occurred but no query or hash parameters were found. ' +
-                  'They were either not set during the redirect, or were removed—typically by a ' +
-                  'routing library—before Twitter react component could read it.'
+                'OAuth redirect has occurred but no query or hash parameters were found.'
               )
             )
           }
@@ -110,6 +142,21 @@ export const useTikTokAuth = ({
         // This will catch until the popup is redirected back to the same origin
       }
     }, 500)
+  }
+
+  const storeAccessToken = (
+    accessToken: string,
+    openId: string,
+    expiresIn: string,
+    callback: WithAuthCallback
+  ) => {
+    window.localStorage.setItem('tikTokAccessToken', accessToken)
+    window.localStorage.setItem('tikTokOpenId', openId)
+
+    const expirationDate = moment().add(expiresIn, 's').format()
+    window.localStorage.setItem('tikTokAccessTokenExpiration', expirationDate)
+
+    callback(accessToken, openId)
   }
 
   const getAccessToken = async (
@@ -133,19 +180,18 @@ export const useTikTokAuth = ({
         }
       )
 
+      if (!response.ok) {
+        throw new Error(response.status + ' ' + (await response.text()))
+      }
+
       const {
         data: {
           data: { access_token, open_id, expires_in }
         }
       } = await response.json()
 
-      window.localStorage.setItem('tikTokAccessToken', access_token)
-      window.localStorage.setItem('tikTokOpenId', open_id)
-
-      const expirationDate = moment().add(expires_in, 's').format()
-      window.localStorage.setItem('tikTokAccessTokenExpiration', expirationDate)
-
-      callback(access_token, open_id)
+      storeAccessToken(access_token, open_id, expires_in, callback)
+      record(make(Name.TIKTOK_COMPLETE_OAUTH, {}))
     } catch (error) {
       return onError(error)
     }

@@ -15,6 +15,7 @@ import {
   Notification,
   NotificationType
 } from 'containers/notification/store/types'
+import { requestOpen as openTikTokModal } from 'containers/share-sound-to-tiktok-modal/store/slice'
 import { ID } from 'models/common/Identifiers'
 import {
   FollowSource,
@@ -46,7 +47,7 @@ import {
 } from 'store/social/tracks/actions'
 import { followUser, unfollowUser, shareUser } from 'store/social/users/actions'
 import { AppState } from 'store/types'
-import { trackPage, profilePage, playlistPage, albumPage } from 'utils/route'
+import { profilePage, playlistPage, albumPage } from 'utils/route'
 
 import MobileOverflowModal from './components/MobileOverflowModal'
 
@@ -68,8 +69,10 @@ const ConnectedMobileOverflowModal = ({
   handle,
   artistName,
   title,
+  permalink,
   isAlbum,
   shareTrack,
+  shareTrackToTikTok,
   shareCollection,
   repostTrack,
   unrepostTrack,
@@ -100,6 +103,7 @@ const ConnectedMobileOverflowModal = ({
     onFavorite,
     onUnfavorite,
     onShare,
+    onShareToTikTok,
     onAddToPlaylist,
     onEditPlaylist,
     onPublishPlaylist,
@@ -117,6 +121,7 @@ const ConnectedMobileOverflowModal = ({
     onFavorite?: () => void
     onUnfavorite?: () => void
     onShare?: () => void
+    onShareToTikTok?: () => void
     onAddToPlaylist?: () => void
     onEditPlaylist?: () => void
     onPublishPlaylist?: () => void
@@ -139,8 +144,12 @@ const ConnectedMobileOverflowModal = ({
           onFavorite: () => saveTrack(id as ID),
           onUnfavorite: () => unsaveTrack(id as ID),
           onShare: () => shareTrack(id as ID),
+          onShareToTikTok: () => shareTrackToTikTok(id as ID),
           onAddToPlaylist: () => addToPlaylist(id as ID, title),
-          onVisitTrackPage: () => visitTrackPage(id as ID, handle, title),
+          onVisitTrackPage: () =>
+            permalink === undefined
+              ? console.error(`Permalink missing for track ${id}`)
+              : visitTrackPage(permalink),
           onVisitArtistPage: () => visitArtistPage(handle),
           onFollow: () => follow(ownerId),
           onUnfollow: () => unfollow(ownerId)
@@ -202,6 +211,7 @@ const ConnectedMobileOverflowModal = ({
       onFavorite={onFavorite}
       onUnfavorite={onUnfavorite}
       onShare={onShare}
+      onShareToTikTok={onShareToTikTok}
       onAddToPlaylist={onAddToPlaylist}
       onVisitTrackPage={onVisitTrackPage}
       onEditPlaylist={onEditPlaylist}
@@ -230,6 +240,7 @@ const getAdditionalInfo = ({
   handle?: string
   artistName?: string
   title?: string
+  permalink?: string
   isAlbum?: boolean
   notification?: Notification
   ownerId?: ID
@@ -246,6 +257,7 @@ const getAdditionalInfo = ({
         handle: user.handle,
         artistName: user.name,
         title: track.title,
+        permalink: track.permalink,
         isAlbum: false,
         ownerId: track.owner_id
       }
@@ -297,6 +309,8 @@ const mapDispatchToProps = (dispatch: Dispatch) => {
     // Tracks
     shareTrack: (trackId: ID) =>
       dispatch(shareTrack(trackId, ShareSource.OVERFLOW)),
+    shareTrackToTikTok: (trackId: ID) =>
+      dispatch(openTikTokModal({ id: trackId })),
     repostTrack: (trackId: ID) =>
       dispatch(repostTrack(trackId, RepostSource.OVERFLOW)),
     unrepostTrack: (trackId: ID) =>
@@ -337,8 +351,7 @@ const mapDispatchToProps = (dispatch: Dispatch) => {
     // Routes
     addToPlaylist: (trackId: ID, title: string) =>
       dispatch(openAddToPlaylist(trackId, title)),
-    visitTrackPage: (trackId: ID, handle: string, trackTitle: string) =>
-      dispatch(pushRoute(trackPage(handle, trackTitle, trackId))),
+    visitTrackPage: (permalink: string) => dispatch(pushRoute(permalink)),
     visitArtistPage: (handle: string) =>
       dispatch(pushRoute(profilePage(handle))),
     visitPlaylistPage: (

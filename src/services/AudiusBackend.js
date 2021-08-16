@@ -2,6 +2,7 @@
 
 import * as DiscoveryAPI from '@audius/libs/src/services/discoveryProvider/requests'
 import * as IdentityAPI from '@audius/libs/src/services/identity/requests'
+import BN from 'bn.js'
 import moment from 'moment-timezone'
 
 import placeholderCoverArt from 'assets/img/imageBlank2x.png'
@@ -24,6 +25,7 @@ import CIDCache from 'store/cache/CIDCache'
 import { isElectron } from 'utils/clientUtil'
 import { getCreatorNodeIPFSGateways } from 'utils/gatewayUtil'
 import { Timer } from 'utils/performance'
+import { Nullable } from 'utils/typeUtils'
 import { uuid } from 'utils/uid'
 
 import {
@@ -452,6 +454,7 @@ class AudiusBackend {
 
       AudiusBackend.sanityChecks(audiusLibs)
     } catch (err) {
+      console.log(err)
       libsError = err.message
     }
 
@@ -515,8 +518,8 @@ class AudiusBackend {
       !SOLANA_CLUSTER_ENDPOINT ||
       !WAUDIO_MINT_ADDRESS ||
       !SOLANA_TOKEN_ADDRESS ||
-      !CLAIMABLE_TOKEN_PDA ||
       !SOLANA_FEE_PAYER_ADDRESS ||
+      !CLAIMABLE_TOKEN_PDA ||
       !CLAIMABLE_TOKEN_PROGRAM_ADDRESS
     ) {
       console.error('Missing solana configs')
@@ -593,6 +596,7 @@ class AudiusBackend {
         const body = await AudiusBackend.getCreatorSocialHandle(account.handle)
         account.twitter_handle = body.twitterHandle || null
         account.instagram_handle = body.instagramHandle || null
+        account.tiktok_handle = body.tikTokHandle || null
         account.website = body.website || null
         account.donation = body.donation || null
         account._artist_pick = body.pinnedTrackId || null
@@ -1000,11 +1004,11 @@ class AudiusBackend {
   }
 
   /**
-   * Retrieves the user's associated wallets from IPFS using the user's metadata CID and creator node endpoints
-   * @param {Object} user The user metadata which contains the CID for the metadata multihash
+   * Retrieves the user's eth associated wallets from IPFS using the user's metadata CID and creator node endpoints
+   * @param {User} user The user metadata which contains the CID for the metadata multihash
    * @returns Object The associated wallets mapping of address to nested signature
    */
-  static async fetchUserAssociatedWallets(user) {
+  static async fetchUserAssociatedEthWallets(user) {
     const gateways = getCreatorNodeIPFSGateways(user.creator_node_endpoint)
     const cid = user?.metadata_multihash ?? null
     if (cid) {
@@ -1021,13 +1025,61 @@ class AudiusBackend {
     return null
   }
 
+  /**
+   * Retrieves the user's solana associated wallets from IPFS using the user's metadata CID and creator node endpoints
+   * @param {User} user The user metadata which contains the CID for the metadata multihash
+   * @returns Object The associated wallets mapping of address to nested signature
+   */
+  static async fetchUserAssociatedSolWallets(user) {
+    const gateways = getCreatorNodeIPFSGateways(user.creator_node_endpoint)
+    const cid = user?.metadata_multihash ?? null
+    if (cid) {
+      const metadata = await fetchCID(
+        cid,
+        gateways,
+        /* cache */ false,
+        /* asUrl */ false
+      )
+      if (metadata?.associated_sol_wallets) {
+        return metadata.associated_sol_wallets
+      }
+    }
+    return null
+  }
+
+  /**
+   * Retrieves both the user's ETH and SOL associated wallets from the user's metadata CID
+   * @param {User} user The user metadata which contains the CID for the metadata multihash
+   * @returns Object The associated wallets mapping of address to nested signature
+   */
+  static async fetchUserAssociatedWallets(user) {
+    const gateways = getCreatorNodeIPFSGateways(user.creator_node_endpoint)
+    const cid = user?.metadata_multihash ?? null
+    if (cid) {
+      const metadata = await fetchCID(
+        cid,
+        gateways,
+        /* cache */ false,
+        /* asUrl */ false
+      )
+      return {
+        associated_sol_wallets: metadata?.associated_sol_wallets ?? null,
+        associated_wallets: metadata?.associated_wallets ?? null
+      }
+    }
+    return null
+  }
+
   static async updateCreator(metadata, id) {
     let newMetadata = { ...metadata }
     const associatedWallets = await AudiusBackend.fetchUserAssociatedWallets(
       metadata
     )
     newMetadata.associated_wallets =
-      newMetadata.associated_wallets || associatedWallets
+      newMetadata.associated_wallets || associatedWallets?.associated_wallets
+    newMetadata.associated_sol_wallets =
+      newMetadata.associated_sol_wallets ||
+      associatedWallets?.associated_sol_wallets
 
     try {
       if (newMetadata.updatedProfilePicture) {
@@ -1048,6 +1100,7 @@ class AudiusBackend {
       if (
         newMetadata.twitter_handle ||
         newMetadata.instagram_handle ||
+        newMetadata.tiktok_handle ||
         newMetadata.website ||
         newMetadata.donation
       ) {
@@ -1062,6 +1115,7 @@ class AudiusBackend {
           body: JSON.stringify({
             twitterHandle: newMetadata.twitter_handle,
             instagramHandle: newMetadata.instagram_handle,
+            tikTokHandle: newMetadata.tiktok_handle,
             website: newMetadata.website,
             donation: newMetadata.donation
           })
@@ -2313,7 +2367,7 @@ class AudiusBackend {
 
     try {
       const { data, signature } = await AudiusBackend.signData()
-      await fetch(`${IDENTITY_SERVICE}/score`, {
+      await fetch(`${IDENTITY_SERVICE}/score/hcaptcha`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2475,6 +2529,18 @@ class AudiusBackend {
       balance,
       userBank.toString()
     )
+  }
+
+  /**
+   * Fetches the SPL WAUDIO balance for the user's solana wallet address
+   * @param {string} The solana wallet address
+   */
+  static async getAddressWAudioBalance(address) {
+    await waitForLibsInit()
+    const waudioBalance = await audiusLibs.solanaWeb3Manager.getWAudioBalance(
+      address
+    )
+    return waudioBalance ?? new BN('0')
   }
 }
 

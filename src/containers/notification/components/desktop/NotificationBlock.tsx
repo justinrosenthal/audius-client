@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useRef, MutableRefObject } from 'react'
 
 import cn from 'classnames'
 
@@ -16,6 +16,8 @@ import { Name } from 'services/analytics'
 import { make, useRecord } from 'store/analytics/actions'
 import { formatCount } from 'utils/formatUtil'
 import { profilePage } from 'utils/route'
+import { Nullable } from 'utils/typeUtils'
+import zIndex from 'utils/zIndex'
 
 import TrackContent from '../TrackContent'
 import { getEntityLink, TwitterShare } from '../TwitterShare'
@@ -30,18 +32,28 @@ export const USER_LENGTH_LIMIT = 9
 
 export type NotificationBlockProps = {
   body?: React.ReactNode
-  timeLabel: string
-  notification: any
   goToRoute: (route: string) => void
-  toggleNotificationPanel: () => void
-  menuProps: Omit<NotificationMenuProps, 'children'>
   markAsRead: (notificationId: string) => void
-  setNotificationUsers: (userIds: ID[], limit: number) => void
+  menuProps: Omit<NotificationMenuProps, 'children'>
+  notification: any
   onClick?: () => void
+  overflowMenuRef: MutableRefObject<Nullable<HTMLDivElement>>
+  userListModalRef: MutableRefObject<Nullable<HTMLDivElement>>
+  setNotificationUsers: (userIds: ID[], limit: number) => void
+  timeLabel: string
+  toggleNotificationPanel: () => void
 }
 
+export const notificationOverflowMenuClassName = 'notificationOverflowMenu'
+
 const NotificationBlock = (props: NotificationBlockProps) => {
-  const { goToRoute, markAsRead, notification, toggleNotificationPanel } = props
+  const {
+    goToRoute,
+    markAsRead,
+    notification,
+    toggleNotificationPanel,
+    userListModalRef
+  } = props
   const record = useRecord()
 
   const {
@@ -195,6 +207,7 @@ const NotificationBlock = (props: NotificationBlockProps) => {
           )}
           onProfileClick={onProfileClick}
           userListModalVisible={userListModalVisible}
+          userListModalRef={userListModalRef}
           onOpenUserListModal={onOpenUserListModal}
           toggleNotificationPanel={props.toggleNotificationPanel}
           onCloseUserListModal={onCloseUserListModal}
@@ -204,7 +217,11 @@ const NotificationBlock = (props: NotificationBlockProps) => {
         <div className={styles.headerContainer}>
           {header}
           <div className={styles.menuContainer}>
-            <Menu menu={props.menuProps}>
+            <Menu
+              menu={props.menuProps}
+              zIndex={zIndex.NAVIGATOR_POPUP_OVERFLOW_POPUP}
+              ref={props.overflowMenuRef}
+            >
               {(ref, triggerPopup) => (
                 <div
                   className={styles.iconContainer}
@@ -231,7 +248,11 @@ const NotificationBlock = (props: NotificationBlockProps) => {
         <div className={styles.body}>{body}</div>
         {!header && (
           <div className={styles.menuContainer}>
-            <Menu menu={props.menuProps}>
+            <Menu
+              menu={props.menuProps}
+              zIndex={zIndex.NAVIGATOR_POPUP_OVERFLOW_POPUP}
+              ref={props.overflowMenuRef}
+            >
               {(ref, triggerPopup) => (
                 <div
                   className={styles.iconContainer}

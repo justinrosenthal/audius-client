@@ -141,6 +141,7 @@ const optionsButtonCell = (val, record, index, props) => {
       trackTitle={val.name}
       albumId={null}
       albumName={null}
+      trackPermalink={val.permalink}
     />
   )
 }
@@ -195,9 +196,7 @@ const DraggableRow = props => {
     } else {
       record = children[0].props.record
     }
-    const link = record.user
-      ? fullTrackPage(record.user.handle, record.title, record.track_id)
-      : ''
+    const link = record.user ? fullTrackPage(record.permalink) : ''
     return (
       <Draggable
         elementType='tr'
