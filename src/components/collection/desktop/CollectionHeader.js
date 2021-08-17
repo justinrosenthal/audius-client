@@ -35,6 +35,7 @@ import { squashNewLines } from 'utils/formatUtil'
 import { formatSecondsAsText, formatDate } from 'utils/timeUtil'
 
 import styles from './CollectionHeader.module.css'
+import { useMenuItems } from 'hooks/useMenuItems/useMenuItems'
 
 const BUTTON_COLLAPSE_WIDTHS = {
   first: 1148,
@@ -161,7 +162,7 @@ const ViewerHasTracksButtons = props => {
         </div>
       </Tooltip>
       <span>
-        <Menu {...props.overflowMenu}>
+        <PopupMenu {...props.overflowMenu}>
           {(ref, triggerPopup) => (
             <div className={cn(styles.buttonSpacing)} ref={ref}>
               <Button
@@ -174,7 +175,7 @@ const ViewerHasTracksButtons = props => {
               />
             </div>
           )}
-        </Menu>
+        </PopupMenu>
       </span>
     </>
   )
@@ -211,7 +212,7 @@ const ViewerNoTracksButtons = props => {
         widthToHideText={BUTTON_COLLAPSE_WIDTHS.fourth}
       />
       <span>
-        <Menu {...props.overflowMenu}>
+        <PopupMenu menuItems={menuItems}>
           {(ref, triggerPopup) => (
             <div className={cn(styles.buttonSpacing)} ref={ref}>
               <Button
@@ -225,7 +226,7 @@ const ViewerNoTracksButtons = props => {
               />
             </div>
           )}
-        </Menu>
+        </PopupMenu>
       </span>
     </>
   )
@@ -384,6 +385,24 @@ const OwnerPublishedButtons = props => {
 }
 
 const Buttons = props => {
+  const dispatch = useDispatch()
+  const menuItems = useMenuItems(
+    {
+      type: props.type,
+      playlistId: props.playlistId,
+      playlistName: props.playlistName,
+      handle: props.ownerHandle,
+      isFavorited: props.isSaved,
+      mount: 'page',
+      isOwner: props.isOwner,
+      includeEmbed: true,
+      includeSave: false,
+      includeVisitPage: false,
+      isPublic: props.isPublished,
+      extraMenuItems: overflowMenuExtraItems
+    },
+    dispatch
+  )
   const overflowMenuExtraItems = []
   if (!props.isOwner) {
     overflowMenuExtraItems.push({
@@ -415,7 +434,7 @@ const Buttons = props => {
 
   const buttonProps = {
     ...props,
-    overflowMenu
+    menuItems: []
   }
 
   let buttons

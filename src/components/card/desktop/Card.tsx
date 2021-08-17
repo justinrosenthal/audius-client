@@ -9,7 +9,6 @@ import DynamicImage from 'components/dynamic-image/DynamicImage'
 import RepostFavoritesStats, {
   Size
 } from 'components/repost-favorites-stats/RepostFavoritesStats'
-import Menu, { MenuOptionType } from 'containers/menu/Menu'
 import UserBadges from 'containers/user-badges/UserBadges'
 import {
   useCollectionCoverArt,
@@ -24,6 +23,7 @@ import {
 import { pluralize } from 'utils/formatUtil'
 
 import styles from './Card.module.css'
+import { PopupMenu, PopupMenuItem } from '@audius/stems'
 
 const cardSizeStyles = {
   small: {
@@ -66,7 +66,7 @@ type CardProps = {
   isLoading?: boolean
   setDidLoad?: (index: number) => void
   size: 'small' | 'medium' | 'large'
-  menu?: MenuOptionType
+  menuItems?: PopupMenuItem[]
   // For wrapping draggable
   link?: string
   // Socials
@@ -124,30 +124,30 @@ const CollectionImage = (props: {
 
 const Card = ({
   className,
-  isUser,
-  isLoading,
-  index,
-  setDidLoad,
-  id,
-  userId,
-  imageSize = null,
-  isPlaylist,
+  favorites,
   handle,
+  id,
+  imageSize = null,
+  index,
+  isLoading,
+  isPlaylist,
+  isPublic,
   isReposted,
   isSaved,
+  isUser,
+  menuItems,
+  onClick,
+  onClickFavorites,
+  onClickReposts,
   playlistId,
-  isPublic,
   playlistName,
   primaryText,
-  secondaryText,
-  size,
-  menu,
   reposts,
-  favorites,
+  secondaryText,
+  setDidLoad,
+  size,
   trackCount,
-  onClickReposts,
-  onClickFavorites,
-  onClick
+  userId
 }: CardProps) => {
   // The card is considered `setDidLoad` (and calls it) if the artwork has loaded and its
   // parent is no longer telling it that it is loading. This allows ordered loading.
@@ -168,7 +168,7 @@ const Card = ({
   const sizeStyles = cardSizeStyles[size]
 
   let bottomActions = null
-  if (menu && (size === 'large' || size === 'medium')) {
+  if (menuItems && (size === 'large' || size === 'medium')) {
     bottomActions = (
       <div
         className={sizeStyles.actionsContainer}
@@ -189,13 +189,13 @@ const Card = ({
         />
       </div>
     )
-  } else if (menu && size === 'small') {
+  } else if (menuItems && size === 'small') {
     bottomActions = (
       <div
         className={sizeStyles.actionsContainer}
         onClick={onBottomActionsClick}
       >
-        <Menu menu={menu}>
+        <PopupMenu menu={menuItems}>
           {(ref, triggerPopup) => (
             <div className={styles.iconContainer} onClick={triggerPopup}>
               <IconKebabHorizontal
@@ -204,7 +204,7 @@ const Card = ({
               />
             </div>
           )}
-        </Menu>
+        </PopupMenu>
       </div>
     )
   }

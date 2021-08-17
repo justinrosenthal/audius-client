@@ -1,22 +1,30 @@
 import { useContext } from 'react'
 
+import { pickBy } from 'lodash'
+
 import { ToastContext } from 'components/toast/ToastContext'
 import { useDispatch } from 'react-redux'
 
-import { getTrackMenuItems, GetTrackMenuItemsOptions } from './trackMenuItems'
-import { MenuVariant } from './types'
+import { getTrackMenuItems } from './getTrackMenuItems'
 
-export const useMenuItems = (
+const menuItemGetterByVariant = {
+  collection: getTrackMenuItems,
+  notification: getTrackMenuItems,
+  track: getTrackMenuItems,
+  user: getTrackMenuItems
+}
+
+type MenuItemGetterByVariant = typeof menuItemGetterByVariant
+
+export const useMenuItems = <MenuVariant extends keyof MenuItemGetterByVariant>(
   variant: MenuVariant,
-  options: GetTrackMenuItemsOptions
+  options: Parameters<MenuItemGetterByVariant[MenuVariant]>[0]
 ) => {
   const dispatch = useDispatch()
   const { toast } = useContext(ToastContext)
 
-  return {
-    collection: getTrackMenuItems,
-    notification: getTrackMenuItems,
-    track: getTrackMenuItems,
-    user: getTrackMenuItems
-  }[variant](options, dispatch, toast)
+  return pickBy(
+    menuItemGetterByVariant[variant](options, dispatch, toast),
+    ({ condition }) => !condition || condition()
+  )
 }
