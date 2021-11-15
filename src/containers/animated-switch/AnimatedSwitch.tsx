@@ -89,30 +89,8 @@ const AnimatedSwitch = ({
   // so that `window.onpopstate` can know whether or not to set animations
   const [getIsStackResetting, setIsStackResetting] = useInstanceVar(false)
 
-  // Go to page
-  useEffect(() => {
-    const animation =
-      slideDirection === SlideDirection.FROM_LEFT
-        ? slideInLeftTransition
-        : slideInRightTransition
-    setAnimation(animation)
-    setIsStackResetting(false)
-  }, [location, setAnimation, slideDirection, setIsStackResetting])
-
-  // Reset
-  useEffect(() => {
-    if (stackReset) {
-      setIsStackResetting(true)
-      setAnimation(noTransition)
-      setStackReset(false)
-    }
-  }, [stackReset, setStackReset, setAnimation, setIsStackResetting])
-
-  // If on android & navigating between the bottom bar route, do not animate
   const isBaseRoute = useCallback(
-    (udpatedRoute: string) => {
-      if (getIsIOS() || !NATIVE_MOBILE) return false
-
+    (updatedRoute?: string) => {
       const userProfilePage = handle ? profilePage(handle) : ''
       const baseRoutes = [
         TRENDING_PAGE,
@@ -122,12 +100,35 @@ const AnimatedSwitch = ({
         userProfilePage
       ]
       return (
-        baseRoutes.includes(udpatedRoute) &&
-        baseRoutes.includes(getPathname(location))
+        baseRoutes.includes(getPathname(location)) &&
+        (!updatedRoute || baseRoutes.includes(updatedRoute))
       )
     },
     [location, handle]
   )
+
+  // Go to page
+  useEffect(() => {
+    if (isBaseRoute()) {
+      setAnimation(noTransition)
+    } else {
+      const animation =
+        slideDirection === SlideDirection.FROM_LEFT
+          ? slideInLeftTransition
+          : slideInRightTransition
+      setAnimation(animation)
+    }
+    setIsStackResetting(false)
+  }, [location, setAnimation, slideDirection, setIsStackResetting, isBaseRoute])
+
+  // Reset
+  useEffect(() => {
+    if (stackReset) {
+      setIsStackResetting(true)
+      setAnimation(noTransition)
+      setStackReset(false)
+    }
+  }, [stackReset, setStackReset, setAnimation, setIsStackResetting])
 
   // Go back a page
   useEffect(() => {
