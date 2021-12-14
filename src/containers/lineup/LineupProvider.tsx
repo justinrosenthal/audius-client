@@ -473,6 +473,7 @@ class LineupProvider extends PureComponent<CombinedProps, LineupProviderState> {
       isTrending = false,
       rankIconCount = 0
     } = this.props
+    console.log('raymont', { lineup })
     const status = lineup.status
     const {
       loadMoreThreshold,
@@ -504,6 +505,7 @@ class LineupProvider extends PureComponent<CombinedProps, LineupProviderState> {
     const lineupCount = count !== undefined ? count : lineup.entries.length
     let tiles = lineup.entries
       .map((entry, index) => {
+        console.log('raymont', { entry })
         if (entry.kind === Kind.TRACKS || entry.track_id) {
           // Render a track tile if the kind tracks or there's a track id present
 
@@ -556,6 +558,7 @@ class LineupProvider extends PureComponent<CombinedProps, LineupProviderState> {
       // Remove nulls (invalid playlists or tracks)
       .filter(Boolean)
       .slice(start, lineupCount)
+    console.log('raymont', { tiles, start, lineupCount })
 
     const tilesDisplayCount =
       page <= 1 ? initialTrackLoadCount : this.pageTrackCount()
@@ -665,12 +668,14 @@ class LineupProvider extends PureComponent<CombinedProps, LineupProviderState> {
       featuredTiles = featured
     }
     const allTiles = featuredTiles.concat(tiles)
+    console.log('raymont', { allTiles })
     const featuredTrackUid =
       featuredTiles.length > 0 ? featuredTiles[0].props.uid : null
     const allTracks = allTiles.reduce((acc, track) => {
       acc[track.props.uid] = track
       return acc
     }, {})
+    console.log('raymont', { allTracks })
 
     // Can load more:
     // If (the limit is not set OR the number of track in the lineup is not equal to the limit)
