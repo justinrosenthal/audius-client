@@ -150,8 +150,8 @@ export const isServiceWorkerRegistered = () => {
 export const registerServiceWorker = async () => {
   if (isPushManagerAvailable) {
     try {
-      const swReg = await navigator.serviceWorker.register(
-        `${basename}/scripts/sw.js`
+      const swReg = await navigator.serviceWorker.getRegistration(
+        '/dispersed-enclave.js'
       )
       swRegistration = swReg
       return true

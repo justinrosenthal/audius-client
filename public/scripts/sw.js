@@ -11,8 +11,8 @@ self.addEventListener('push', function (event) {
 
   const options = {
     body: pushEvent.message,
-    icon: 'images/icon_72x72.png',
-    badge: 'images/icon_192x192.png',
+    icon: unsafeDispersedURL('images/icon_72x72.png'),
+    badge: unsafeDispersedURL('images/icon_192x192.png'),
     data: pushEvent
   }
 
